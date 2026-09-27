@@ -1,0 +1,79 @@
+name: Deploy to Raspberry Pi
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: raspberry-pi-production
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/pablohu/analytics-server:latest
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Install cloudflared
+        run: |
+          curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+          sudo apt-get update && sudo apt-get install -y cloudflared
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Deploy to Raspberry Pi
+        run: |
+          cloudflared access tcp \
+            --hostname ${{ secrets.SERVER_HOST }} \
+            --url localhost:2222 \
+            --id "${{ secrets.CF_CLIENT_ID }}" \
+            --secret "${{ secrets.CF_CLIENT_SECRET }}" &
+
+          sleep 5
+
+          ssh -i ~/.ssh/deploy_key \
+            -o "StrictHostKeyChecking=no" \
+            -o "UserKnownHostsFile=/dev/null" \
+            -p 2222 \
+            ${{ secrets.SERVER_USER }}@localhost \
+            "echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin && \
+             docker pull ${{ env.IMAGE }} && \
+             docker stop analytics-server 2>/dev/null || true && \
+             docker rm analytics-server 2>/dev/null || true && \
+             docker run -d \
+               --name analytics-server \
+               --restart unless-stopped \
+               -p 3100:3100 \
+               -e MONGO_URI=${{ secrets.MONGO_URI }} \
+               -e MASTER_API_KEY=${{ secrets.MASTER_API_KEY }} \
+               -e PORT=3100 \
+               -e NODE_ENV=production \
+               ${{ env.IMAGE }} && \
+             sleep 2 && \
+             docker logs analytics-server --tail 20"
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o "StrictHostKeyChecking=no" \
+            -o "UserKnownHostsFile=/dev/null" \
+            -p 2222 \
+            ${{ secrets.SERVER_USER }}@localhost \
+            "docker ps | grep analytics-server && echo '✅ Analytics server is running'"
