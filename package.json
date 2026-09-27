@@ -1,0 +1,21 @@
+{
+  "name": "analytics-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["analytics", "tracking", "privacy"],
+  "author": "Kiwichito",
+  "license": "ISC",
+  "description": "Privacy-friendly analytics server for tracking page views across multiple websites",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "mongodb": "^7.6.0"
+  }
+}
