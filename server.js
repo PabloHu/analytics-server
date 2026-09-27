@@ -36,6 +36,9 @@ async function db() {
 }
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+// Serve static files (analytics.js)
+app.use(express.static('public'));
+
 app.use(cors({
   origin: [
     'https://frutasdelcampo.com',
@@ -50,7 +53,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static('public'));
 
 // Rate limiting - 60 requests per minute
 const limiter = rateLimit({
