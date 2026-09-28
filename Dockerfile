@@ -18,6 +18,7 @@ COPY server.js ./
 COPY middleware/ ./middleware/
 COPY routes/ ./routes/
 COPY scripts/ ./scripts/
+COPY public/ ./public/
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
