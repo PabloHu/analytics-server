@@ -7,7 +7,11 @@
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["analytics", "tracking", "privacy"],
+  "keywords": [
+    "analytics",
+    "tracking",
+    "privacy"
+  ],
   "author": "Kiwichito",
   "license": "ISC",
   "description": "Privacy-friendly analytics server for tracking page views across multiple websites",
@@ -16,7 +20,7 @@
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
-    "geoip-lite": "^1.4.10",
+    "geoip-lite": "^1.2.2",
     "mongodb": "^7.6.0"
   }
 }
