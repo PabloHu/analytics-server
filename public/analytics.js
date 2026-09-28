@@ -42,15 +42,79 @@
     return sessionId;
   }
 
+  // Collect device information
+  function getDeviceInfo() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+    return {
+      // Screen & Display
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      screenResolution: `${window.screen.width}x${window.screen.height}`,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      colorDepth: window.screen.colorDepth,
+
+      // Locale & Preferences
+      language: navigator.language || navigator.userLanguage,
+      languages: navigator.languages ? navigator.languages.join(',') : navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezoneOffset: new Date().getTimezoneOffset(),
+
+      // Platform & Device
+      platform: navigator.platform,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+      deviceMemory: navigator.deviceMemory || null,
+      maxTouchPoints: navigator.maxTouchPoints || 0,
+      touchSupport: 'ontouchstart' in window,
+
+      // Network
+      connectionType: connection?.effectiveType || null,
+      connectionDownlink: connection?.downlink || null,
+      connectionRtt: connection?.rtt || null,
+      saveData: connection?.saveData || false
+    };
+  }
+
+  // Collect performance metrics
+  function getPerformanceMetrics() {
+    if (!window.performance || !window.performance.timing) {
+      return null;
+    }
+
+    const timing = window.performance.timing;
+    const navigation = timing.loadEventEnd - timing.navigationStart;
+
+    // Only return metrics if page is fully loaded
+    if (navigation === 0) {
+      return null;
+    }
+
+    return {
+      pageLoadTime: navigation,
+      domContentLoadedTime: timing.domContentLoadedEventEnd - timing.navigationStart,
+      timeToFirstByte: timing.responseStart - timing.navigationStart,
+      domInteractive: timing.domInteractive - timing.navigationStart,
+      resourceLoadTime: timing.loadEventEnd - timing.domContentLoadedEventEnd
+    };
+  }
+
   // Track page view
   function trackPageView() {
     const data = {
       url: window.location.href,
       referrer: document.referrer || 'direct',
       sessionId: getSessionId(),
-      screenWidth: window.screen.width,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ...getDeviceInfo()
     };
+
+    // Add performance metrics if available (on full page load)
+    const perf = getPerformanceMetrics();
+    if (perf) {
+      data.performance = perf;
+    }
 
     // Send tracking data
     fetch(endpoint, {
