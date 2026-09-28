@@ -44,6 +44,10 @@ app.use(cors({
     'https://frutasdelcampo.com',
     'https://littleanimeshop.com',
     'https://frutalesdelcarmelo.com',
+    'https://kiwichito.com',
+    'https://www.kiwichito.com',
+    'http://kiwichito.com',
+    'http://www.kiwichito.com',
     'http://localhost:4200',  // Angular dev
     'http://localhost:3000',  // React dev
     'http://localhost:3001',  // Local testing
