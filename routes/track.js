@@ -128,60 +128,63 @@ function createTrackRouter(db) {
         // Extract client identifier from domain
         const client = req.client.domain.split('.')[0]; // e.g., "frutasdelcampo" from "frutasdelcampo.com"
 
-        // Insert page view with all collected data
-        await collection.insertOne({
-          // Basic tracking
+        // Build document - only include fields with values (no nulls)
+        const pageView = {
+          // Basic tracking (always present)
           url,
           referrer: referrer || 'direct',
           sessionId,
           timestamp: new Date(),
-
-          // User Agent
           userAgent: req.headers['user-agent'] || 'unknown',
-
-          // Geolocation (from IP)
-          country: geo.country,
-          countryCode: geo.countryCode,
-          city: geo.city,
-          region: geo.region,
-          geoTimezone: geo.timezone,
-          coordinates: geo.ll,
-
-          // Screen & Display
-          screenWidth: screenWidth || null,
-          screenHeight: screenHeight || null,
-          screenResolution: screenResolution || null,
-          viewportWidth: viewportWidth || null,
-          viewportHeight: viewportHeight || null,
-          devicePixelRatio: devicePixelRatio || null,
-          colorDepth: colorDepth || null,
-
-          // Locale & Preferences
-          language: language || null,
-          languages: languages || null,
-          timezone: timezone || null,
-          timezoneOffset: timezoneOffset || null,
-
-          // Platform & Device
-          platform: platform || null,
-          hardwareConcurrency: hardwareConcurrency || null,
-          deviceMemory: deviceMemory || null,
-          maxTouchPoints: maxTouchPoints || null,
-          touchSupport: touchSupport || false,
-
-          // Network
-          connectionType: connectionType || null,
-          connectionDownlink: connectionDownlink || null,
-          connectionRtt: connectionRtt || null,
-          saveData: saveData || false,
-
-          // Performance
-          performance: performance || null,
-
-          // Client identification
           client,
           domain: req.client.domain
-        });
+        };
+
+        // Add geolocation if available
+        if (geo.country && geo.countryCode !== 'XX') {
+          pageView.country = geo.country;
+          pageView.countryCode = geo.countryCode;
+          if (geo.city) pageView.city = geo.city;
+          if (geo.region) pageView.region = geo.region;
+          if (geo.timezone) pageView.geoTimezone = geo.timezone;
+          if (geo.ll) pageView.coordinates = geo.ll;
+        }
+
+        // Add screen & display info
+        if (screenWidth) pageView.screenWidth = screenWidth;
+        if (screenHeight) pageView.screenHeight = screenHeight;
+        if (screenResolution) pageView.screenResolution = screenResolution;
+        if (viewportWidth) pageView.viewportWidth = viewportWidth;
+        if (viewportHeight) pageView.viewportHeight = viewportHeight;
+        if (devicePixelRatio) pageView.devicePixelRatio = devicePixelRatio;
+        if (colorDepth) pageView.colorDepth = colorDepth;
+
+        // Add locale & preferences
+        if (language) pageView.language = language;
+        if (languages) pageView.languages = languages;
+        if (timezone) pageView.timezone = timezone;
+        if (timezoneOffset !== null && timezoneOffset !== undefined) {
+          pageView.timezoneOffset = timezoneOffset;
+        }
+
+        // Add platform & device
+        if (platform) pageView.platform = platform;
+        if (hardwareConcurrency) pageView.hardwareConcurrency = hardwareConcurrency;
+        if (deviceMemory) pageView.deviceMemory = deviceMemory;
+        if (maxTouchPoints) pageView.maxTouchPoints = maxTouchPoints;
+        if (touchSupport) pageView.touchSupport = touchSupport;
+
+        // Add network info
+        if (connectionType) pageView.connectionType = connectionType;
+        if (connectionDownlink) pageView.connectionDownlink = connectionDownlink;
+        if (connectionRtt) pageView.connectionRtt = connectionRtt;
+        if (saveData) pageView.saveData = saveData;
+
+        // Add performance metrics
+        if (performance) pageView.performance = performance;
+
+        // Insert page view (only fields with values)
+        await collection.insertOne(pageView);
 
         return res.json({ success: true });
       } catch (err) {
