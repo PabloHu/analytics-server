@@ -161,6 +161,277 @@ function createAdminRouter(db) {
     }
   });
 
+  /**
+   * GET /admin/stats/over-time
+   * Get views over time (daily aggregation)
+   */
+  router.get('/stats/over-time', async (req, res) => {
+    const { client, days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) }
+      };
+      if (client) {
+        filter.client = client;
+      }
+
+      const viewsOverTime = await collection.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
+            views: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { date: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(viewsOverTime);
+    } catch (err) {
+      console.error('Error getting views over time:', err);
+      return res.status(500).json({ error: 'Failed to get views over time' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-country
+   * Get views by country
+   */
+  router.get('/stats/by-country', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        country: { $exists: true, $ne: null }
+      };
+
+      const byCountry = await collection.aggregate([
+        { $match: filter },
+        { $group: { _id: '$country', views: { $sum: 1 } } },
+        { $sort: { views: -1 } },
+        { $limit: 20 },
+        { $project: { country: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byCountry);
+    } catch (err) {
+      console.error('Error getting views by country:', err);
+      return res.status(500).json({ error: 'Failed to get views by country' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-device
+   * Get views by device type (mobile vs desktop)
+   */
+  router.get('/stats/by-device', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) }
+      };
+
+      const byDevice = await collection.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: {
+              $cond: {
+                if: { $eq: ['$touchSupport', true] },
+                then: 'Mobile',
+                else: 'Desktop'
+              }
+            },
+            views: { $sum: 1 }
+          }
+        },
+        { $sort: { views: -1 } },
+        { $project: { device: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byDevice);
+    } catch (err) {
+      console.error('Error getting views by device:', err);
+      return res.status(500).json({ error: 'Failed to get views by device' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-platform
+   * Get views by platform (OS/Browser)
+   */
+  router.get('/stats/by-platform', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        platform: { $exists: true, $ne: null }
+      };
+
+      const byPlatform = await collection.aggregate([
+        { $match: filter },
+        { $group: { _id: '$platform', views: { $sum: 1 } } },
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+        { $project: { platform: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byPlatform);
+    } catch (err) {
+      console.error('Error getting views by platform:', err);
+      return res.status(500).json({ error: 'Failed to get views by platform' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-language
+   * Get views by language
+   */
+  router.get('/stats/by-language', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        language: { $exists: true, $ne: null }
+      };
+
+      const byLanguage = await collection.aggregate([
+        { $match: filter },
+        { $group: { _id: '$language', views: { $sum: 1 } } },
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+        { $project: { language: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byLanguage);
+    } catch (err) {
+      console.error('Error getting views by language:', err);
+      return res.status(500).json({ error: 'Failed to get views by language' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-timezone
+   * Get views by timezone
+   */
+  router.get('/stats/by-timezone', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        timezone: { $exists: true, $ne: null }
+      };
+
+      const byTimezone = await collection.aggregate([
+        { $match: filter },
+        { $group: { _id: '$timezone', views: { $sum: 1 } } },
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+        { $project: { timezone: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byTimezone);
+    } catch (err) {
+      console.error('Error getting views by timezone:', err);
+      return res.status(500).json({ error: 'Failed to get views by timezone' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/performance
+   * Get average performance metrics
+   */
+  router.get('/stats/performance', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        'performance.pageLoadTime': { $exists: true }
+      };
+
+      const avgPerformance = await collection.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            avgPageLoadTime: { $avg: '$performance.pageLoadTime' },
+            avgDomContentLoadedTime: { $avg: '$performance.domContentLoadedTime' },
+            avgTimeToFirstByte: { $avg: '$performance.timeToFirstByte' },
+            avgDomInteractive: { $avg: '$performance.domInteractive' },
+            avgResourceLoadTime: { $avg: '$performance.resourceLoadTime' },
+            count: { $sum: 1 }
+          }
+        },
+        { $project: { _id: 0 } }
+      ]).toArray();
+
+      return res.json(avgPerformance[0] || {});
+    } catch (err) {
+      console.error('Error getting performance stats:', err);
+      return res.status(500).json({ error: 'Failed to get performance stats' });
+    }
+  });
+
+  /**
+   * GET /admin/stats/by-resolution
+   * Get views by screen resolution
+   */
+  router.get('/stats/by-resolution', async (req, res) => {
+    const { days = 7 } = req.query;
+
+    try {
+      const database = await db();
+      const collection = database.collection('pageViews');
+
+      const filter = {
+        timestamp: { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+        screenResolution: { $exists: true, $ne: null }
+      };
+
+      const byResolution = await collection.aggregate([
+        { $match: filter },
+        { $group: { _id: '$screenResolution', views: { $sum: 1 } } },
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+        { $project: { resolution: '$_id', views: 1, _id: 0 } }
+      ]).toArray();
+
+      return res.json(byResolution);
+    } catch (err) {
+      console.error('Error getting views by resolution:', err);
+      return res.status(500).json({ error: 'Failed to get views by resolution' });
+    }
+  });
+
   return router;
 }
 
