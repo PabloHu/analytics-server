@@ -53,7 +53,7 @@ app.use(cors({
     'http://localhost:3001',  // Local testing
   ],
   methods: ['GET', 'POST', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'X-API-Key', 'X-Master-Key'],
+  allowedHeaders: ['Content-Type', 'X-API-Key', 'X-Master-Key', 'Authorization'],
 }));
 
 app.use(express.json());
@@ -82,9 +82,19 @@ app.get('/health', (req, res) => {
 // ── Routes ────────────────────────────────────────────────────────────────────
 const createTrackRouter = require('./routes/track');
 const createAdminRouter = require('./routes/admin');
+const createRBACRouter = require('./routes/rbac');
+
+// Store MongoDB client getter for RBAC middleware
+const getMongoClient = async () => {
+  if (!connected) {
+    await connectDb();
+  }
+  return mongoClient;
+};
 
 app.use('/', createTrackRouter(db));
 app.use('/admin', createAdminRouter(db));
+app.use('/rbac', createRBACRouter(getMongoClient));
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3002;
