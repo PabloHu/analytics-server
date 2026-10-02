@@ -1,13 +1,12 @@
 const express = require('express');
 const crypto = require('crypto');
-const { validateMasterKey } = require('../middleware/apiKey');
+const analyticsAdmin = require('../middleware/analyticsAdmin');
 const { ObjectId } = require('mongodb');
 
-function createAdminRouter(db) {
+function createAdminRouter(db, getMongoClient) {
   const router = express.Router();
 
-  // All admin routes require master key
-  router.use(validateMasterKey);
+  router.use(analyticsAdmin(getMongoClient));
 
   /**
    * GET /admin/keys

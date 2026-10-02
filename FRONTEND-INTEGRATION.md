@@ -386,3 +386,5 @@ After integration:
 Done! Analytics are now being collected. 🎉
 
 Browser CORS permits `https://app.kiwichito.com` and `https://admin.kiwichito.com` alongside existing site origins. RBAC requests still require a Firebase bearer token.
+
+Dashboard `GET /admin/stats` and its breakdown endpoints also accept a Firebase bearer token from an active, unexpired admin or owner with `users:read` permission. Tracking-key administration continues to require the server master key. Never embed the master key in browser code.

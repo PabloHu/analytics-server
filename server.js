@@ -78,7 +78,7 @@ const getMongoClient = async () => {
 };
 
 app.use('/', createTrackRouter(db));
-app.use('/admin', createAdminRouter(db));
+app.use('/admin', createAdminRouter(db, getMongoClient));
 app.use('/rbac', createRBACRouter(getMongoClient));
 
 // ── Start Server ──────────────────────────────────────────────────────────────
