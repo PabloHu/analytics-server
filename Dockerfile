@@ -15,6 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application code
 COPY server.js ./
+COPY config/ ./config/
 COPY middleware/ ./middleware/
 COPY routes/ ./routes/
 COPY scripts/ ./scripts/
