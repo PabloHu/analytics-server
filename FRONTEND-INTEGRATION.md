@@ -384,3 +384,5 @@ After integration:
 ```
 
 Done! Analytics are now being collected. 🎉
+
+Browser CORS permits `https://app.kiwichito.com` and `https://admin.kiwichito.com` alongside existing site origins. RBAC requests still require a Firebase bearer token.
